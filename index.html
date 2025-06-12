@@ -1,168 +1,199 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ระบบเช็กชื่อ</title>
   <style>
-    html, body {
+    * {
+      box-sizing: border-box;
+    }
+    body {
       margin: 0;
-      padding: 0;
       font-family: sans-serif;
       background: #000;
-      color: white;
-      height: 100vh;
+      color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
+      min-height: 100vh;
     }
     .container {
-      text-align: center;
-      max-width: 400px;
       width: 100%;
+      max-width: 400px;
+      padding: 20px;
+      background: #111;
+      border: 1px solid #444;
+      border-radius: 10px;
+    }
+    h1, h2 {
+      text-align: center;
+      margin-bottom: 20px;
     }
     input, button {
       width: 100%;
-      padding: 10px;
-      margin: 8px 0;
+      padding: 12px;
+      margin: 10px 0;
       font-size: 16px;
       border: 2px solid red;
-      background: #111;
-      color: white;
-      box-sizing: border-box;
+      background: #000;
+      color: #fff;
+      border-radius: 5px;
     }
     button.active {
       border-color: lime;
-      background-color: #222;
+      background: #222;
     }
     .hidden {
       display: none;
     }
+    .checkinBtn {
+      margin: 5px 0;
+    }
     #userDataDisplay {
-      text-align: left;
+      background: #222;
+      padding: 10px;
       max-height: 300px;
       overflow-y: auto;
-      background: #111;
-      padding: 10px;
-      border: 1px solid red;
+      font-size: 14px;
+      border-radius: 5px;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>ระบบเช็กชื่อ</h1>
-
     <div id="menu">
-      <button id="loginBtn">ลงชื่อเข้าใช้</button>
-      <button id="registerBtn">สมัคร</button>
-      <button id="adminBtn">ข้อมูลผู้ใช้ทั้งหมด</button>
+      <button onclick="showSection('loginForm')">ลงชื่อเข้าใช้</button>
+      <button onclick="showSection('registerForm')">สมัคร</button>
+      <button onclick="showSection('adminForm')">ข้อมูลผู้ใช้ทั้งหมด</button>
     </div>
 
     <div id="loginForm" class="hidden">
-      <input type="text" id="loginFullname" placeholder="ชื่อ-สกุล" />
-      <input type="number" id="loginAge" placeholder="อายุ" />
-      <input type="text" id="loginNickname" placeholder="ชื่อเล่น" />
-      <button id="loginSubmit">เข้าสู่ระบบ</button>
+      <h2>เข้าสู่ระบบ</h2>
+      <input id="loginFullname" placeholder="ชื่อ-สกุล">
+      <input id="loginAge" placeholder="อายุ" type="number">
+      <input id="loginNickname" placeholder="ชื่อเล่น">
+      <button onclick="loginUser()">เข้าสู่ระบบ</button>
     </div>
 
     <div id="registerForm" class="hidden">
-      <input type="text" id="regFullname" placeholder="ชื่อ-สกุล" />
-      <input type="text" id="regNickname" placeholder="ชื่อเล่น" />
-      <input type="password" id="regPassword" placeholder="รหัสผ่าน" />
-      <input type="password" id="regConfirmPassword" placeholder="ยืนยันรหัสผ่าน" />
-      <button id="registerSubmit">สมัคร</button>
+      <h2>สมัคร</h2>
+      <input id="regFullname" placeholder="ชื่อ-สกุล">
+      <input id="regNickname" placeholder="ชื่อเล่น">
+      <input id="regPassword" placeholder="รหัสผ่าน" type="password">
+      <input id="regConfirmPassword" placeholder="ยืนยันรหัสผ่าน" type="password">
+      <button onclick="registerUser()">สมัคร</button>
     </div>
 
     <div id="checkinForm" class="hidden">
-      <h3 id="checkinName"></h3>
-      <button class="checkinBtn" data-status="มาเรียน">เข้าเรียน</button>
-      <button class="checkinBtn" data-status="ลาเรียน">ลาเรียน</button>
-      <button id="checkinSubmit">ส่ง</button>
+      <h2>เช็กชื่อ</h2>
+      <div id="checkinName"></div>
+      <button class="checkinBtn" onclick="setStatus(this, 'มาเรียน')">มาเรียน</button>
+      <button class="checkinBtn" onclick="setStatus(this, 'ลาเรียน')">ลาเรียน</button>
+      <button onclick="submitCheckin()">ส่ง</button>
     </div>
 
     <div id="adminForm" class="hidden">
-      <input type="password" id="adminPassword" placeholder="รหัสผ่านผู้ดูแลระบบ" />
-      <button id="adminLogin">เข้าสู่ระบบ</button>
+      <h2>ผู้ดูแลระบบ</h2>
+      <input id="adminPassword" placeholder="รหัสผ่านผู้ดูแล" type="password">
+      <button onclick="loadUserData()">เข้าสู่ระบบ</button>
     </div>
 
     <div id="userData" class="hidden">
-      <h2>ข้อมูลผู้ใช้ทั้งหมด</h2>
+      <h2>ข้อมูลผู้ใช้</h2>
       <div id="userDataDisplay"></div>
     </div>
   </div>
 
   <script>
-    const users = JSON.parse(localStorage.getItem("users") || "[]");
+    let users = JSON.parse(localStorage.getItem("users") || "[]");
     let currentUser = null;
-    let selectedStatus = "";
+    let currentStatus = null;
 
-    const el = id => document.getElementById(id);
-
-    function show(id) {
-      document.querySelectorAll(".container > div").forEach(d => d.classList.add("hidden"));
-      if (id) el(id).classList.remove("hidden");
+    function showSection(id) {
+      document.querySelectorAll(".container > div").forEach(div => {
+        if (div.id !== "menu") div.classList.add("hidden");
+      });
+      document.getElementById(id).classList.remove("hidden");
     }
 
-    el("loginBtn").onclick = () => show("loginForm");
-    el("registerBtn").onclick = () => show("registerForm");
-    el("adminBtn").onclick = () => show("adminForm");
+    function registerUser() {
+      const fullname = document.getElementById("regFullname").value.trim();
+      const nickname = document.getElementById("regNickname").value.trim();
+      const password = document.getElementById("regPassword").value;
+      const confirmPassword = document.getElementById("regConfirmPassword").value;
 
-    el("registerSubmit").onclick = () => {
-      const fullname = el("regFullname").value.trim();
-      const nickname = el("regNickname").value.trim();
-      const pass = el("regPassword").value;
-      const confirm = el("regConfirmPassword").value;
-      if (!fullname || !nickname || !pass || !confirm || pass !== confirm) {
-        alert("กรอกข้อมูลให้ครบและรหัสผ่านต้องตรงกัน");
+      if (!fullname || !nickname || !password || password !== confirmPassword) {
+        alert("กรุณากรอกข้อมูลให้ครบและรหัสผ่านต้องตรงกัน");
         return;
       }
-      const user = { fullname, nickname, password: pass, age: null, checkins: [] };
+
+      const user = { fullname, nickname, password, age: null, checkins: [] };
       users.push(user);
       localStorage.setItem("users", JSON.stringify(users));
       currentUser = user;
-      el("checkinName").innerText = fullname;
-      show("checkinForm");
-    };
+      document.getElementById("checkinName").innerText = fullname;
+      showSection("checkinForm");
+    }
 
-    el("loginSubmit").onclick = () => {
-      const fullname = el("loginFullname").value.trim();
-      const nickname = el("loginNickname").value.trim();
-      const age = el("loginAge").value;
+    function loginUser() {
+      const fullname = document.getElementById("loginFullname").value.trim();
+      const nickname = document.getElementById("loginNickname").value.trim();
+      const age = document.getElementById("loginAge").value;
       const user = users.find(u => u.fullname === fullname && u.nickname === nickname);
-      if (!user) return alert("ไม่พบผู้ใช้");
+
+      if (!user) {
+        alert("ไม่พบผู้ใช้");
+        return;
+      }
+
       user.age = age;
       currentUser = user;
-      el("checkinName").innerText = fullname;
-      show("checkinForm");
-    };
+      document.getElementById("checkinName").innerText = fullname;
+      showSection("checkinForm");
+    }
 
-    document.querySelectorAll(".checkinBtn").forEach(btn => {
-      btn.onclick = () => {
-        selectedStatus = btn.dataset.status;
-        document.querySelectorAll(".checkinBtn").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-      };
-    });
+    function setStatus(button, status) {
+      currentStatus = status;
+      document.querySelectorAll(".checkinBtn").forEach(btn => btn.classList.remove("active"));
+      button.classList.add("active");
+    }
 
-    el("checkinSubmit").onclick = () => {
-      if (!currentUser || !selectedStatus) return alert("กรุณาเลือกสถานะก่อน");
-      const now = new Date();
-      currentUser.checkins.push({ status: selectedStatus, time: now.toLocaleString() });
+    function submitCheckin() {
+      if (!currentUser || !currentStatus) {
+        alert("กรุณาเลือกสถานะก่อน");
+        return;
+      }
+
+      currentUser.checkins.push({ status: currentStatus, time: new Date().toLocaleString() });
       localStorage.setItem("users", JSON.stringify(users));
-      alert("บันทึกสำเร็จ");
-      show("menu");
-    };
+      alert("บันทึกการเช็กชื่อแล้ว");
+      showSection("menu");
+    }
 
-    el("adminLogin").onclick = () => {
-      const pw = el("adminPassword").value;
-      if (pw !== "123456") return alert("รหัสผ่านไม่ถูกต้อง");
-      show("userData");
-      const html = users.map((u, i) => {
-        return `<div><b>ผู้ใช้ ${i + 1}</b><br>ชื่อ: ${u.fullname}<br>ชื่อเล่น: ${u.nickname}<br>อายุ: ${u.age || "-"}<br>` +
-               `<ul>` + u.checkins.map(c => `<li>${c.status} - ${c.time}</li>`).join("") + `</ul></div><hr>`;
-      }).join("");
-      el("userDataDisplay").innerHTML = html;
-    };
+    function loadUserData() {
+      const pw = document.getElementById("adminPassword").value;
+      if (pw !== "123456") {
+        alert("รหัสผ่านไม่ถูกต้อง");
+        return;
+      }
+
+      showSection("userData");
+      const display = document.getElementById("userDataDisplay");
+      display.innerHTML = users.map((u, i) => {
+        return `
+          <div>
+            <b>ผู้ใช้ ${i + 1}</b><br>
+            ชื่อ: ${u.fullname}<br>
+            ชื่อเล่น: ${u.nickname}<br>
+            อายุ: ${u.age || '-'}<br>
+            <b>เช็กชื่อ:</b>
+            <ul>${u.checkins.map(ci => `<li>${ci.status} - ${ci.time}</li>`).join('')}</ul>
+          </div><hr>
+        `;
+      }).join('');
+    }
   </script>
 </body>
 </html>
