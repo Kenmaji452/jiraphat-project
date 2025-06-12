@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ระบบเช็กชื่อ</title>
   <style>
     * {
@@ -58,6 +58,18 @@
       font-size: 14px;
       border-radius: 5px;
     }
+    #menu button {
+      border-color: #444;
+      background: #222;
+      margin: 0 5px;
+      width: auto;
+      padding: 8px 12px;
+    }
+    #menu button:hover {
+      border-color: lime;
+      background: #333;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -71,18 +83,18 @@
 
     <div id="loginForm" class="hidden">
       <h2>เข้าสู่ระบบ</h2>
-      <input id="loginFullname" placeholder="ชื่อ-สกุล">
-      <input id="loginAge" placeholder="อายุ" type="number">
-      <input id="loginNickname" placeholder="ชื่อเล่น">
+      <input id="loginFullname" placeholder="ชื่อ-สกุล" />
+      <input id="loginNickname" placeholder="ชื่อเล่น" />
+      <input id="loginPassword" placeholder="รหัสผ่าน" type="password" />
       <button onclick="loginUser()">เข้าสู่ระบบ</button>
     </div>
 
     <div id="registerForm" class="hidden">
       <h2>สมัคร</h2>
-      <input id="regFullname" placeholder="ชื่อ-สกุล">
-      <input id="regNickname" placeholder="ชื่อเล่น">
-      <input id="regPassword" placeholder="รหัสผ่าน" type="password">
-      <input id="regConfirmPassword" placeholder="ยืนยันรหัสผ่าน" type="password">
+      <input id="regFullname" placeholder="ชื่อ-สกุล" />
+      <input id="regNickname" placeholder="ชื่อเล่น" />
+      <input id="regPassword" placeholder="รหัสผ่าน" type="password" />
+      <input id="regConfirmPassword" placeholder="ยืนยันรหัสผ่าน" type="password" />
       <button onclick="registerUser()">สมัคร</button>
     </div>
 
@@ -96,7 +108,7 @@
 
     <div id="adminForm" class="hidden">
       <h2>ผู้ดูแลระบบ</h2>
-      <input id="adminPassword" placeholder="รหัสผ่านผู้ดูแล" type="password">
+      <input id="adminPassword" placeholder="รหัสผ่านผู้ดูแล" type="password" />
       <button onclick="loadUserData()">เข้าสู่ระบบ</button>
     </div>
 
@@ -112,10 +124,22 @@
     let currentStatus = null;
 
     function showSection(id) {
-      document.querySelectorAll(".container > div").forEach(div => {
-        if (div.id !== "menu") div.classList.add("hidden");
+      // ซ่อนทุก section ที่ไม่ใช่ menu
+      const sections = [
+        "loginForm",
+        "registerForm",
+        "checkinForm",
+        "adminForm",
+        "userData",
+      ];
+      sections.forEach((sectionId) => {
+        document.getElementById(sectionId).classList.add("hidden");
       });
-      document.getElementById(id).classList.remove("hidden");
+
+      // แสดง section ที่ต้องการ
+      if (id) {
+        document.getElementById(id).classList.remove("hidden");
+      }
     }
 
     function registerUser() {
@@ -124,8 +148,22 @@
       const password = document.getElementById("regPassword").value;
       const confirmPassword = document.getElementById("regConfirmPassword").value;
 
-      if (!fullname || !nickname || !password || password !== confirmPassword) {
-        alert("กรุณากรอกข้อมูลให้ครบและรหัสผ่านต้องตรงกัน");
+      if (!fullname || !nickname || !password) {
+        alert("กรุณากรอกข้อมูลให้ครบ");
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        alert("รหัสผ่านไม่ตรงกัน");
+        return;
+      }
+
+      // ตรวจสอบว่ามีผู้ใช้ซ้ำหรือยัง
+      const exists = users.some(
+        (u) => u.fullname === fullname && u.nickname === nickname
+      );
+      if (exists) {
+        alert("ผู้ใช้นี้มีอยู่แล้ว");
         return;
       }
 
@@ -133,6 +171,7 @@
       users.push(user);
       localStorage.setItem("users", JSON.stringify(users));
       currentUser = user;
+      alert("สมัครสมาชิกเรียบร้อยแล้ว");
       document.getElementById("checkinName").innerText = fullname;
       showSection("checkinForm");
     }
@@ -140,15 +179,23 @@
     function loginUser() {
       const fullname = document.getElementById("loginFullname").value.trim();
       const nickname = document.getElementById("loginNickname").value.trim();
-      const age = document.getElementById("loginAge").value;
-      const user = users.find(u => u.fullname === fullname && u.nickname === nickname);
+      const password = document.getElementById("loginPassword").value;
 
-      if (!user) {
-        alert("ไม่พบผู้ใช้");
+      if (!fullname || !nickname || !password) {
+        alert("กรุณากรอกข้อมูลให้ครบ");
         return;
       }
 
-      user.age = age;
+      const user = users.find(
+        (u) =>
+          u.fullname === fullname && u.nickname === nickname && u.password === password
+      );
+
+      if (!user) {
+        alert("ไม่พบผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
+        return;
+      }
+
       currentUser = user;
       document.getElementById("checkinName").innerText = fullname;
       showSection("checkinForm");
@@ -156,7 +203,9 @@
 
     function setStatus(button, status) {
       currentStatus = status;
-      document.querySelectorAll(".checkinBtn").forEach(btn => btn.classList.remove("active"));
+      document.querySelectorAll(".checkinBtn").forEach((btn) =>
+        btn.classList.remove("active")
+      );
       button.classList.add("active");
     }
 
@@ -166,34 +215,49 @@
         return;
       }
 
-      currentUser.checkins.push({ status: currentStatus, time: new Date().toLocaleString() });
+      currentUser.checkins.push({
+        status: currentStatus,
+        time: new Date().toLocaleString(),
+      });
       localStorage.setItem("users", JSON.stringify(users));
       alert("บันทึกการเช็กชื่อแล้ว");
-      showSection("menu");
+      currentStatus = null;
+      showSection(null);
     }
 
     function loadUserData() {
       const pw = document.getElementById("adminPassword").value;
       if (pw !== "123456") {
-        alert("รหัสผ่านไม่ถูกต้อง");
+        alert("รหัสผ่านผู้ดูแลไม่ถูกต้อง");
         return;
       }
 
       showSection("userData");
       const display = document.getElementById("userDataDisplay");
-      display.innerHTML = users.map((u, i) => {
-        return `
+      if (users.length === 0) {
+        display.innerHTML = "<p>ไม่มีข้อมูลผู้ใช้</p>";
+        return;
+      }
+      display.innerHTML = users
+        .map(
+          (u, i) => `
           <div>
             <b>ผู้ใช้ ${i + 1}</b><br>
             ชื่อ: ${u.fullname}<br>
             ชื่อเล่น: ${u.nickname}<br>
-            อายุ: ${u.age || '-'}<br>
+            อายุ: ${u.age || "-"}<br>
             <b>เช็กชื่อ:</b>
-            <ul>${u.checkins.map(ci => `<li>${ci.status} - ${ci.time}</li>`).join('')}</ul>
+            <ul>${u.checkins
+              .map((ci) => `<li>${ci.status} - ${ci.time}</li>`)
+              .join("")}</ul>
           </div><hr>
-        `;
-      }).join('');
+        `
+        )
+        .join("");
     }
+
+    // แสดงเมนูหลักตอนโหลดหน้าเว็บ
+    showSection(null);
   </script>
 </body>
 </html>
