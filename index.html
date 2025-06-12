@@ -1,248 +1,283 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>ระบบเช็กชื่อ</title>
-<style>
-  * {
-    box-sizing: border-box;
-  }
-  html, body {
-    margin: 0; padding: 0; height: 100%; background: #000;
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-    color: #fff;
-  }
-  body {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-  }
-  .container {
-    position: relative;
-    width: 100%;
-    max-width: 420px;
-    padding: 20px 25px;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 0 15px #cc0000;
-    z-index: 1;
-  }
+  <meta charset="UTF-8">
+  <title>ระบบเช็กชื่อ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    html, body {
+      margin: 0; padding: 0; height: 100%; background: #000;
+      font-family: sans-serif; color: white; overflow: hidden;
+    }
+    .signin {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      flex-direction: column;
+      position: relative;
+      z-index: 1;
+    }
+    section {
+      display: grid;
+      width: 100vw;
+      height: 100vh;
+      grid-template-columns: repeat(20, 1fr);
+      grid-template-rows: repeat(10, 1fr);
+      position: absolute;
+      top: 0; left: 0;
+      z-index: 0;
+    }
+    section span {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: #181818;
+      border: 2px solid black;
+      animation: borderFade 4s linear infinite;
+      transition: background 1.5s;
+      box-sizing: border-box;
+    }
+    section span:hover {
+      background: #f00;
+      transition: background 0s;
+    }
+    @keyframes borderFade {
+      0%, 100% { border-color: black; }
+      50% { border-color: red; }
+    }
+    input, button {
+      margin: 5px auto;
+      padding: 10px;
+      border: 2px solid red;
+      background: black;
+      color: white;
+      font-size: 16px;
+      width: min(90%, 300px);
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .hidden { display: none; }
+    #menu {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    #adminBtn {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+    }
+  </style>
 
-  /* Background grid container */
-  .background-grid {
-    position: absolute;
-    inset: 0;
-    display: grid;
-    grid-template-columns: repeat(20, 1fr);
-    grid-template-rows: repeat(10, 1fr);
-    pointer-events: none; /* ไม่บังคลิก */
-    z-index: 0;
-  }
-  .background-grid span {
-    display: block;
-    width: 100%;
-    height: 100%;
-    background: #181818;
-    border: 2px solid black;
-    animation: borderFade 4s linear infinite;
-    box-sizing: border-box;
-    z-index: 0;
-  }
-  .background-grid span:hover {
-    background: #f00;
-    transition: background 0s;
-  }
-  @keyframes borderFade {
-    0%, 100% { border-color: black; }
-    50% { border-color: red; }
-  }
-
-  /* เนื้อหา container อยู่ข้างบน */
-  .content {
-    position: relative;
-    z-index: 1;
-    background: rgba(16, 0, 0, 0.85);
-    border: 2px solid #cc0000;
-    border-radius: 12px;
-    padding: 15px 25px 25px;
-    box-shadow: 0 0 15px #cc0000;
-  }
-
-  h1, h2 {
-    text-align: center;
-    margin-bottom: 20px;
-    user-select: none;
-  }
-  input, button {
-    width: 100%;
-    padding: 12px;
-    margin: 10px 0;
-    font-size: 16px;
-    border: 2px solid #cc0000;
-    background: #100000;
-    color: #fff;
-    border-radius: 6px;
-    transition: border-color 0.3s ease, background-color 0.3s ease;
-  }
-  input:focus, button:hover {
-    border-color: #ff4d4d;
-    background-color: #330000;
-    outline: none;
-    cursor: pointer;
-  }
-  button.active {
-    border-color: #00ff00;
-    background-color: #003300;
-    color: #baffba;
-  }
-  .hidden {
-    display: none;
-  }
-  .checkinBtn {
-    margin: 5px 0;
-  }
-  #userDataDisplay {
-    background: #220000;
-    padding: 12px;
-    max-height: 300px;
-    overflow-y: auto;
-    font-size: 14px;
-    border-radius: 6px;
-    border: 1px solid #cc0000;
-  }
-  #menu {
-    display: flex;
-    justify-content: center;
-    gap: 12px;
-    margin-bottom: 20px;
-    user-select: none;
-  }
-  #menu button {
-    width: auto;
-    padding: 10px 16px;
-    border-color: #cc0000;
-    background: #220000;
-    color: #fff;
-    font-weight: 600;
-    border-radius: 6px;
-    transition: all 0.3s ease;
-  }
-  #menu button:hover {
-    border-color: #ff4d4d;
-    background-color: #330000;
-    cursor: pointer;
-  }
-  ul {
-    padding-left: 18px;
-    margin: 8px 0;
-  }
-  li {
-    margin-bottom: 4px;
-  }
-</style>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "SENDER_ID",
+      appId: "APP_ID"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+  </script>
 </head>
 <body>
-  <div class="container">
-    <!-- Background grid -->
-    <div class="background-grid"></div>
+  <section></section>
+  <div class="signin">
+    <h1>ระบบเช็กชื่อ</h1>
+    <div id="menu">
+      <button onclick="showLogin()">ลงชื่อเข้าใช้</button>
+      <button onclick="showRegister()">สมัคร</button>
+    </div>
+    <button id="adminBtn" onclick="showUserAccess()">ข้อมูลผู้ใช้ทั้งหมด</button>
 
-    <!-- Actual content -->
-    <div class="content">
-      <h1>ระบบเช็กชื่อ</h1>
+    <div id="loginForm" class="hidden">
+      <h2>ลงชื่อเข้าใช้</h2>
+      <input type="text" id="loginFullname" placeholder="ชื่อ-สกุล">
+      <input type="number" id="loginAge" placeholder="อายุ">
+      <input type="text" id="loginNickname" placeholder="ชื่อเล่น">
+      <button onclick="loginUser()">ลงชื่อเข้าใช้</button>
+    </div>
 
-      <div id="menu">
-        <button type="button" onclick="showSection('loginForm')">ลงชื่อเข้าใช้</button>
-        <button type="button" onclick="showSection('registerForm')">สมัคร</button>
-        <button type="button" onclick="showSection('adminForm')">ข้อมูลผู้ใช้ทั้งหมด</button>
-      </div>
+    <div id="registerForm" class="hidden">
+      <h2>สมัคร</h2>
+      <input type="text" id="regFullname" placeholder="ชื่อ-สกุล">
+      <input type="text" id="regNickname" placeholder="ชื่อเล่น">
+      <input type="password" id="regPassword" placeholder="รหัสผ่าน">
+      <input type="password" id="regConfirmPassword" placeholder="ยืนยันรหัสผ่าน">
+      <button onclick="registerUser()">สมัคร</button>
+    </div>
 
-      <div id="loginForm" class="hidden">
-        <h2>เข้าสู่ระบบ</h2>
-        <input id="loginFullname" placeholder="ชื่อ-สกุล" autocomplete="off" />
-        <input id="loginNickname" placeholder="ชื่อเล่น" autocomplete="off" />
-        <input id="loginPassword" placeholder="รหัสผ่าน" type="password" autocomplete="off" />
-        <button type="button" onclick="loginUser()">เข้าสู่ระบบ</button>
-      </div>
+    <div id="checkinForm" class="hidden">
+      <h2>เช็กชื่อ</h2>
+      <div id="checkinName"></div>
+      <button onclick="setCheckinStatus('มาเรียน')">เข้าเรียน</button>
+      <button onclick="setCheckinStatus('ลาเรียน')">ลาเรียน</button>
+      <button onclick="submitCheckin()">ส่ง</button>
+    </div>
 
-      <div id="registerForm" class="hidden">
-        <h2>สมัคร</h2>
-        <input id="regFullname" placeholder="ชื่อ-สกุล" autocomplete="off" />
-        <input id="regNickname" placeholder="ชื่อเล่น" autocomplete="off" />
-        <input id="regPassword" placeholder="รหัสผ่าน" type="password" autocomplete="off" />
-        <input id="regConfirmPassword" placeholder="ยืนยันรหัสผ่าน" type="password" autocomplete="off" />
-        <button type="button" onclick="registerUser()">สมัคร</button>
-      </div>
+    <div id="adminAccess" class="hidden">
+      <h2>เข้าถึงข้อมูลผู้ใช้ทั้งหมด</h2>
+      <input type="password" id="adminPassword" placeholder="รหัสผ่าน">
+      <button onclick="accessAllUsers()">เข้าสู่ระบบ</button>
+    </div>
 
-      <div id="checkinForm" class="hidden">
-        <h2>เช็กชื่อ</h2>
-        <div id="checkinName" style="font-weight:700; font-size:18px; margin-bottom: 15px;"></div>
-        <button type="button" class="checkinBtn" onclick="setStatus(this, 'มาเรียน')">มาเรียน</button>
-        <button type="button" class="checkinBtn" onclick="setStatus(this, 'ลาเรียน')">ลาเรียน</button>
-        <button type="button" onclick="submitCheckin()">ส่ง</button>
-      </div>
-
-      <div id="adminForm" class="hidden">
-        <h2>ผู้ดูแลระบบ</h2>
-        <input id="adminPassword" placeholder="รหัสผ่านผู้ดูแล" type="password" autocomplete="off" />
-        <button type="button" onclick="loadUserData()">เข้าสู่ระบบ</button>
-      </div>
-
-      <div id="userData" class="hidden">
-        <h2>ข้อมูลผู้ใช้</h2>
-        <div id="userDataDisplay"></div>
-      </div>
+    <div id="allUserData" class="hidden">
+      <h2>ข้อมูลผู้ใช้ทั้งหมด</h2>
+      <div id="userDataDisplay"></div>
     </div>
   </div>
 
-<script>
-  const rows = 10;
-  const cols = 20;
-  const backgroundGrid = document.querySelector('.background-grid');
-  for(let row=0; row<rows; row++){
-    for(let col=0; col<cols; col++){
-      const span = document.createElement('span');
-      span.style.animationDelay = (row * 0.2) + 's'; // ไล่ delay จากบนลงล่าง
-      backgroundGrid.appendChild(span);
+  <script>
+    const container = document.querySelector('section');
+    const rows = 10;
+    const cols = 20;
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const span = document.createElement('span');
+        span.style.animationDelay = (row * 0.2) + 's';
+        container.appendChild(span);
+      }
     }
-  }
 
-  let users = JSON.parse(localStorage.getItem("users") || "[]");
-  let currentUser = null;
-  let currentStatus = null;
+    let users = [];
+    let currentUser = null;
+    let checkinStatus = '';
 
-  function showSection(id) {
-    const sections = [
-      "loginForm",
-      "registerForm",
-      "checkinForm",
-      "adminForm",
-      "userData",
-    ];
-    sections.forEach((sectionId) => {
-      document.getElementById(sectionId).classList.add("hidden");
+    const usersRef = db.ref('users');
+    usersRef.on('value', snapshot => {
+      users = snapshot.val() ? Object.values(snapshot.val()) : [];
     });
-    if (id) {
-      document.getElementById(id).classList.remove("hidden");
-    }
-  }
 
-  function registerUser() {
-    const fullname = document.getElementById("regFullname").value.trim();
-    const nickname = document.getElementById("regNickname").value.trim();
-    const password = document.getElementById("regPassword").value;
-    const confirmPassword = document.getElementById("regConfirmPassword").value;
-
-    if (!fullname || !nickname || !password) {
-      alert("กรุณากรอกข้อมูลให้ครบ");
-      return;
+    function hideAll() {
+      document.querySelectorAll('.signin > div, .signin > button').forEach(el => {
+        if (el.id !== 'menu' && el.id !== 'adminBtn') {
+          el.classList.add('hidden');
+        }
+      });
     }
 
-    if (password !== confirmPassword) {
-      alert("รหัสผ่านไม่ตรงกัน");
-      return;
+    function showLogin() {
+      hideAll();
+      document.querySelector('h1').innerText = 'ลงชื่อเข้าใช้';
+      document.getElementById('loginForm').classList.remove('hidden');
     }
 
-    const exists = users.some(
-      (u) => u.fullname === fullname && u.nickname === nickname
+    function showRegister() {
+      hideAll();
+      document.querySelector('h1').innerText = 'สมัครสมาชิก';
+      document.getElementById('registerForm').classList.remove('hidden');
+    }
+
+    function showUserAccess() {
+      hideAll();
+      document.querySelector('h1').innerText = 'ข้อมูลผู้ใช้ทั้งหมด';
+      document.getElementById('adminAccess').classList.remove('hidden');
+    }
+
+    function saveUserToFirebase(user) {
+      db.ref('users').push(user);
+    }
+
+    function registerUser() {
+      const fullname = document.getElementById('regFullname').value;
+      const nickname = document.getElementById('regNickname').value;
+      const password = document.getElementById('regPassword').value;
+      const confirmPassword = document.getElementById('regConfirmPassword').value;
+
+      if (password !== confirmPassword) return alert("รหัสผ่านไม่ตรงกัน");
+
+      const user = {
+        fullname,
+        nickname,
+        password,
+        age: null,
+        checkins: []
+      };
+
+      saveUserToFirebase(user);
+      currentUser = user;
+      document.getElementById('checkinName').innerText = fullname;
+      hideAll();
+      document.querySelector('h1').innerText = 'เช็กชื่อ';
+      document.getElementById('checkinForm').classList.remove('hidden');
+    }
+
+    function loginUser() {
+      const fullname = document.getElementById('loginFullname').value;
+      const age = document.getElementById('loginAge').value;
+      const nickname = document.getElementById('loginNickname').value;
+
+      usersRef.once('value', snapshot => {
+        let found = false;
+        snapshot.forEach(child => {
+          const u = child.val();
+          if (u.fullname === fullname && u.nickname === nickname) {
+            currentUser = u;
+            currentUser.age = age;
+            db.ref('users/' + child.key).update({ age });
+            document.getElementById('checkinName').innerText = fullname;
+            hideAll();
+            document.querySelector('h1').innerText = 'เช็กชื่อ';
+            document.getElementById('checkinForm').classList.remove('hidden');
+            found = true;
+          }
+        });
+        if (!found) alert("ไม่พบผู้ใช้");
+      });
+    }
+
+    function setCheckinStatus(status) {
+      checkinStatus = status;
+    }
+
+    function submitCheckin() {
+      if (!currentUser) return;
+      const now = new Date().toLocaleString();
+      currentUser.checkins.push({ status: checkinStatus, time: now });
+
+      usersRef.once('value', snapshot => {
+        snapshot.forEach(child => {
+          const u = child.val();
+          if (u.fullname === currentUser.fullname && u.nickname === currentUser.nickname) {
+            db.ref('users/' + child.key).update(currentUser);
+          }
+        });
+      });
+      alert("บันทึกแล้ว");
+    }
+
+    function accessAllUsers() {
+      const pass = document.getElementById('adminPassword').value;
+      if (pass !== '46534') return alert("รหัสผ่านไม่ถูกต้อง");
+
+      hideAll();
+      document.querySelector('h1').innerText = 'ข้อมูลผู้ใช้ทั้งหมด';
+      document.getElementById('allUserData').classList.remove('hidden');
+
+      usersRef.once('value', snapshot => {
+        let html = '';
+        let index = 1;
+        snapshot.forEach(child => {
+          const u = child.val();
+          html += `<hr><b>ผู้ใช้ที่ ${index++}</b><br>ชื่อ: ${u.fullname}<br>ชื่อเล่น: ${u.nickname}<br>อายุ: ${u.age || 'ไม่ระบุ'}<br>`;
+          html += `การเช็กชื่อ:<ul>`;
+          if (u.checkins) {
+            u.checkins.forEach(ci => {
+              html += `<li>${ci.status} - ${ci.time}</li>`;
+            });
+          }
+          html += '</ul>';
+        });
+        document.getElementById('userDataDisplay').innerHTML = html;
+      });
+    }
+  </script>
+</body>
+</html>
