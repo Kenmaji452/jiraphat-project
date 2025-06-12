@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>ระบบเช็กชื่อ</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     html, body {
       margin: 0; padding: 0; height: 100%; background: #000;
@@ -46,19 +46,17 @@
       0%, 100% { border-color: black; }
       50% { border-color: red; }
     }
-    input, button {
+    input, button, select {
+      display: block;
       margin: 5px auto;
-      padding: 10px;
+      padding: 5px 10px;
       border: 2px solid red;
       background: black;
       color: white;
       font-size: 16px;
-      width: min(90%, 300px);
-      border-radius: 8px;
-      cursor: pointer;
     }
     .hidden { display: none; }
-    #menu {
+    #menu, #userControls {
       display: flex;
       flex-direction: column;
       gap: 10px;
@@ -68,33 +66,33 @@
       bottom: 20px;
       right: 20px;
     }
+    #userInfo {
+      position: absolute;
+      top: 10px;
+      left: 20px;
+      font-size: 18px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 5px 10px;
+      border-radius: 8px;
+    }
   </style>
-
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <script>
-    const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-      databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT_ID.appspot.com",
-      messagingSenderId: "SENDER_ID",
-      appId: "APP_ID"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-  </script>
 </head>
 <body>
   <section></section>
   <div class="signin">
+    <div id="userInfo" class="hidden"></div>
     <h1>ระบบเช็กชื่อ</h1>
+
     <div id="menu">
       <button onclick="showLogin()">ลงชื่อเข้าใช้</button>
       <button onclick="showRegister()">สมัคร</button>
     </div>
+
+    <div id="userControls" class="hidden">
+      <button onclick="viewHistory()">ดูประวัติของฉัน</button>
+      <button onclick="logout()">ออกจากระบบ</button>
+    </div>
+
     <button id="adminBtn" onclick="showUserAccess()">ข้อมูลผู้ใช้ทั้งหมด</button>
 
     <div id="loginForm" class="hidden">
@@ -111,6 +109,10 @@
       <input type="text" id="regNickname" placeholder="ชื่อเล่น">
       <input type="password" id="regPassword" placeholder="รหัสผ่าน">
       <input type="password" id="regConfirmPassword" placeholder="ยืนยันรหัสผ่าน">
+      <select id="regRole">
+        <option value="student">นักเรียน</option>
+        <option value="teacher">ครู</option>
+      </select>
       <button onclick="registerUser()">สมัคร</button>
     </div>
 
@@ -132,6 +134,12 @@
       <h2>ข้อมูลผู้ใช้ทั้งหมด</h2>
       <div id="userDataDisplay"></div>
     </div>
+
+    <div id="userHistory" class="hidden">
+      <h2>ประวัติการเช็กชื่อของฉัน</h2>
+      <canvas id="checkinChart" width="300" height="150"></canvas>
+      <div id="userHistoryDisplay"></div>
+    </div>
   </div>
 
   <script>
@@ -146,18 +154,13 @@
       }
     }
 
-    let users = [];
+    let users = JSON.parse(localStorage.getItem('users') || '[]');
     let currentUser = null;
     let checkinStatus = '';
 
-    const usersRef = db.ref('users');
-    usersRef.on('value', snapshot => {
-      users = snapshot.val() ? Object.values(snapshot.val()) : [];
-    });
-
     function hideAll() {
       document.querySelectorAll('.signin > div, .signin > button').forEach(el => {
-        if (el.id !== 'menu' && el.id !== 'adminBtn') {
+        if (el.id !== 'menu' && el.id !== 'adminBtn' && el.id !== 'userInfo') {
           el.classList.add('hidden');
         }
       });
@@ -165,24 +168,17 @@
 
     function showLogin() {
       hideAll();
-      document.querySelector('h1').innerText = 'ลงชื่อเข้าใช้';
       document.getElementById('loginForm').classList.remove('hidden');
     }
 
     function showRegister() {
       hideAll();
-      document.querySelector('h1').innerText = 'สมัครสมาชิก';
       document.getElementById('registerForm').classList.remove('hidden');
     }
 
     function showUserAccess() {
       hideAll();
-      document.querySelector('h1').innerText = 'ข้อมูลผู้ใช้ทั้งหมด';
       document.getElementById('adminAccess').classList.remove('hidden');
-    }
-
-    function saveUserToFirebase(user) {
-      db.ref('users').push(user);
     }
 
     function registerUser() {
@@ -190,6 +186,7 @@
       const nickname = document.getElementById('regNickname').value;
       const password = document.getElementById('regPassword').value;
       const confirmPassword = document.getElementById('regConfirmPassword').value;
+      const role = document.getElementById('regRole').value;
 
       if (password !== confirmPassword) return alert("รหัสผ่านไม่ตรงกัน");
 
@@ -197,16 +194,25 @@
         fullname,
         nickname,
         password,
+        role,
         age: null,
-        checkins: []
+        checkins: [],
+        points: 100,
+        penalties: []
       };
 
-      saveUserToFirebase(user);
+      users.push(user);
+      localStorage.setItem('users', JSON.stringify(users));
       currentUser = user;
       document.getElementById('checkinName').innerText = fullname;
+      updateUserInfo();
       hideAll();
-      document.querySelector('h1').innerText = 'เช็กชื่อ';
-      document.getElementById('checkinForm').classList.remove('hidden');
+      if (role === 'student') {
+        document.getElementById('checkinForm').classList.remove('hidden');
+        document.getElementById('userControls').classList.remove('hidden');
+      } else {
+        showUserAccess();
+      }
     }
 
     function loginUser() {
@@ -214,23 +220,30 @@
       const age = document.getElementById('loginAge').value;
       const nickname = document.getElementById('loginNickname').value;
 
-      usersRef.once('value', snapshot => {
-        let found = false;
-        snapshot.forEach(child => {
-          const u = child.val();
-          if (u.fullname === fullname && u.nickname === nickname) {
-            currentUser = u;
-            currentUser.age = age;
-            db.ref('users/' + child.key).update({ age });
-            document.getElementById('checkinName').innerText = fullname;
-            hideAll();
-            document.querySelector('h1').innerText = 'เช็กชื่อ';
-            document.getElementById('checkinForm').classList.remove('hidden');
-            found = true;
-          }
-        });
-        if (!found) alert("ไม่พบผู้ใช้");
-      });
+      const user = users.find(u => u.fullname === fullname && u.nickname === nickname);
+      if (!user) return alert("ไม่พบผู้ใช้");
+
+      user.age = age;
+      currentUser = user;
+      document.getElementById('checkinName').innerText = fullname;
+      updateUserInfo();
+      hideAll();
+      if (user.role === 'student') {
+        document.getElementById('checkinForm').classList.remove('hidden');
+        document.getElementById('userControls').classList.remove('hidden');
+      } else {
+        showUserAccess();
+      }
+    }
+
+    function updateUserInfo() {
+      if (currentUser) {
+        const info = `👤 ${currentUser.fullname} | ยศ: ${currentUser.role} | คะแนน: ${currentUser.points}`;
+        document.getElementById('userInfo').innerText = info;
+        document.getElementById('userInfo').classList.remove('hidden');
+      } else {
+        document.getElementById('userInfo').classList.add('hidden');
+      }
     }
 
     function setCheckinStatus(status) {
@@ -239,18 +252,11 @@
 
     function submitCheckin() {
       if (!currentUser) return;
-      const now = new Date().toLocaleString();
-      currentUser.checkins.push({ status: checkinStatus, time: now });
-
-      usersRef.once('value', snapshot => {
-        snapshot.forEach(child => {
-          const u = child.val();
-          if (u.fullname === currentUser.fullname && u.nickname === currentUser.nickname) {
-            db.ref('users/' + child.key).update(currentUser);
-          }
-        });
-      });
+      const now = new Date();
+      currentUser.checkins.push({ status: checkinStatus, time: now.toLocaleString() });
+      localStorage.setItem('users', JSON.stringify(users));
       alert("บันทึกแล้ว");
+      updateUserInfo();
     }
 
     function accessAllUsers() {
@@ -258,25 +264,76 @@
       if (pass !== '46534') return alert("รหัสผ่านไม่ถูกต้อง");
 
       hideAll();
-      document.querySelector('h1').innerText = 'ข้อมูลผู้ใช้ทั้งหมด';
       document.getElementById('allUserData').classList.remove('hidden');
 
-      usersRef.once('value', snapshot => {
-        let html = '';
-        let index = 1;
-        snapshot.forEach(child => {
-          const u = child.val();
-          html += `<hr><b>ผู้ใช้ที่ ${index++}</b><br>ชื่อ: ${u.fullname}<br>ชื่อเล่น: ${u.nickname}<br>อายุ: ${u.age || 'ไม่ระบุ'}<br>`;
-          html += `การเช็กชื่อ:<ul>`;
-          if (u.checkins) {
-            u.checkins.forEach(ci => {
-              html += `<li>${ci.status} - ${ci.time}</li>`;
-            });
-          }
-          html += '</ul>';
+      let html = '';
+      users.forEach((u, i) => {
+        html += `<hr><b>ผู้ใช้ที่ ${i + 1}</b><br>ชื่อ: ${u.fullname}<br>ชื่อเล่น: ${u.nickname}<br>ยศ: ${u.role}<br>อายุ: ${u.age || 'ไม่ระบุ'}<br>คะแนน: ${u.points}<br>`;
+        html += `การเช็กชื่อ:<ul>`;
+        u.checkins.forEach(ci => {
+          html += `<li>${ci.status} - ${ci.time}</li>`;
         });
-        document.getElementById('userDataDisplay').innerHTML = html;
+        html += '</ul>';
+        if (currentUser && currentUser.role === 'teacher') {
+          html += `<div>หักคะแนน:
+            <button onclick="deductPoints(${i}, 5)">-5</button>
+            <button onclick="deductPoints(${i}, 10)">-10</button>
+            <button onclick="deductPoints(${i}, 20)">-20</button>
+            <input type='text' id='reason${i}' placeholder='เหตุผล'>
+          </div>`;
+        }
       });
+
+      document.getElementById('userDataDisplay').innerHTML = html;
+    }
+
+    function deductPoints(index, amount) {
+      const reason = document.getElementById(`reason${index}`).value;
+      if (!reason) return alert("กรุณากรอกเหตุผล");
+      users[index].points -= amount;
+      users[index].penalties.push({ amount, reason, time: new Date().toLocaleString() });
+      localStorage.setItem('users', JSON.stringify(users));
+      alert("หักคะแนนแล้ว");
+      accessAllUsers();
+    }
+
+    function viewHistory() {
+      if (!currentUser) return;
+      hideAll();
+      document.getElementById('userHistory').classList.remove('hidden');
+
+      const history = currentUser.checkins.map(c => `${c.status} - ${c.time}`);
+      document.getElementById('userHistoryDisplay').innerHTML = `<ul><li>` + history.join('</li><li>') + '</li></ul>';
+
+      const counts = currentUser.checkins.reduce((acc, ci) => {
+        acc[ci.status] = (acc[ci.status] || 0) + 1;
+        return acc;
+      }, {});
+
+      new Chart(document.getElementById('checkinChart'), {
+        type: 'bar',
+        data: {
+          labels: Object.keys(counts),
+          datasets: [{
+            label: 'จำนวนครั้ง',
+            data: Object.values(counts),
+            backgroundColor: ['green', 'orange', 'red']
+          }]
+        },
+        options: {
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    function logout() {
+      currentUser = null;
+      checkinStatus = '';
+      updateUserInfo();
+      hideAll();
+      document.getElementById('menu').classList.remove('hidden');
     }
   </script>
 </body>
