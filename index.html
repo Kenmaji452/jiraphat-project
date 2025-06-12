@@ -2,12 +2,19 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ระบบเช็กชื่อ</title>
   <style>
     html, body {
-      margin: 0; padding: 0; height: 100%; background: #000;
-      font-family: sans-serif; color: white; overflow: hidden;
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #000;
+      font-family: sans-serif;
+      color: white;
+      overflow: hidden;
     }
+
     .signin {
       display: flex;
       justify-content: center;
@@ -16,7 +23,9 @@
       flex-direction: column;
       position: relative;
       z-index: 1;
+      padding: 10px;
     }
+
     section {
       display: grid;
       width: 100vw;
@@ -24,9 +33,11 @@
       grid-template-columns: repeat(20, 1fr);
       grid-template-rows: repeat(10, 1fr);
       position: absolute;
-      top: 0; left: 0;
+      top: 0;
+      left: 0;
       z-index: 0;
     }
+
     section span {
       display: block;
       width: 100%;
@@ -37,44 +48,82 @@
       transition: background 1.5s;
       box-sizing: border-box;
     }
+
     section span:hover {
       background: #f00;
       transition: background 0s;
     }
+
     @keyframes borderFade {
       0%, 100% { border-color: black; }
       50% { border-color: red; }
     }
+
     input, button {
       display: block;
-      margin: 5px auto;
-      padding: 5px 10px;
+      margin: 10px auto;
+      padding: 12px 20px;
       border: 2px solid red;
       background: black;
       color: white;
-      font-size: 16px;
+      font-size: 18px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 300px;
+      box-sizing: border-box;
+      cursor: pointer;
     }
-    .hidden { display: none; }
+
+    .hidden {
+      display: none;
+    }
+
     #menu {
       display: flex;
       flex-direction: column;
       gap: 10px;
+      width: 100%;
+      max-width: 300px;
     }
+
     #adminBtn {
       position: absolute;
       bottom: 20px;
       right: 20px;
+      font-size: 14px;
+      padding: 8px 12px;
+      border-radius: 6px;
+    }
+
+    @media (max-width: 600px) {
+      .signin h1, .signin h2 {
+        font-size: 20px;
+        text-align: center;
+      }
+
+      input, button {
+        font-size: 16px;
+        padding: 10px 15px;
+      }
+
+      #adminBtn {
+        right: 10px;
+        bottom: 10px;
+      }
     }
   </style>
 </head>
 <body>
   <section></section>
+
   <div class="signin">
     <h1>ระบบเช็กชื่อ</h1>
+
     <div id="menu">
       <button onclick="showLogin()">ลงชื่อเข้าใช้</button>
       <button onclick="showRegister()">สมัคร</button>
     </div>
+
     <button id="adminBtn" onclick="showUserAccess()">ข้อมูลผู้ใช้ทั้งหมด</button>
 
     <div id="loginForm" class="hidden">
