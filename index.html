@@ -22,8 +22,8 @@
       width: 100%;
       max-width: 400px;
       padding: 20px;
-      background: #111;
-      border: 1px solid #444;
+      background: linear-gradient(135deg, #330000, #000000);
+      border: 1px solid #440000;
       border-radius: 10px;
     }
     h1, h2 {
@@ -59,15 +59,16 @@
       border-radius: 5px;
     }
     #menu button {
-      border-color: #444;
-      background: #222;
+      border-color: #440000;
+      background: #220000;
       margin: 0 5px;
       width: auto;
       padding: 8px 12px;
+      color: #fff;
     }
     #menu button:hover {
       border-color: lime;
-      background: #333;
+      background: #330000;
       cursor: pointer;
     }
   </style>
@@ -124,7 +125,6 @@
     let currentStatus = null;
 
     function showSection(id) {
-      // ซ่อนทุก section ที่ไม่ใช่ menu
       const sections = [
         "loginForm",
         "registerForm",
@@ -136,7 +136,6 @@
         document.getElementById(sectionId).classList.add("hidden");
       });
 
-      // แสดง section ที่ต้องการ
       if (id) {
         document.getElementById(id).classList.remove("hidden");
       }
@@ -158,7 +157,6 @@
         return;
       }
 
-      // ตรวจสอบว่ามีผู้ใช้ซ้ำหรือยัง
       const exists = users.some(
         (u) => u.fullname === fullname && u.nickname === nickname
       );
@@ -256,7 +254,6 @@
         .join("");
     }
 
-    // แสดงเมนูหลักตอนโหลดหน้าเว็บ
     showSection(null);
   </script>
 </body>
